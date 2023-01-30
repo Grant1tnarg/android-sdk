@@ -1,4 +1,69 @@
-/*
+
+Copy code
+import android.os.AsyncTask;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.json.JSONObject;
+
+public class MainActivity extends AppCompatActivity {
+
+    private EditText inputText;
+    private Button sendButton;
+    private TextView responseText;
+    private OkHttpClient client = new OkHttpClient();
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        inputText = findViewById(R.id.input_text);
+        sendButton = findViewById(R.id.send_button);
+        responseText = findViewById(R.id.response_text);
+
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String input = inputText.getText().toString();
+                new RequestTask().execute(input);
+            }
+        });
+    }
+
+    private class RequestTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                Request request = new Request.Builder()
+                        .url("https://api.openai.com/v1/engines/text-davinci-001/jobs")
+                        .post(RequestBody.create(MediaType.parse("application/json"),
+                                "{\"prompt\":\"" + strings[0] + "\",\"max_tokens\":100}"))
+                        .addHeader("Content-Type", "application/json")
+                        .addHeader("Authorization", "Bearer <API_KEY>")
+                        .build();
+                Response response = client.newCall(request).execute();
+                JSONObject json = new JSONObject(response.body().string());
+                return json.getString("choices").substring(2, json.getString("choices").length() - 2);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return e.toString();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            responseText.setText(s);
+        }
+    }
+}/*
  * Copyright 2017 IBM Corp. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
